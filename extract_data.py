@@ -25,11 +25,20 @@ with open(sys.argv[1]) as csvfile:
       column_names = row
       column_name_to_index = {}
       for i in xrange(len(column_names)):
-        column_name_to_index[column_names[i]] = i
+        column_name = column_names[i]
+        if i == 0 and column_name.startswith('\xef\xbb\xbf'):
+          column_name = column_name[3:]
+        if column_name == 'Country/Region':
+          column_name = 'Country_Region'
+        elif column_name == 'Province/State':
+          column_name = 'Province_State'
+        column_name_to_index[column_name] = i
       first_row = False
     else:
       country = row[column_name_to_index['Country_Region']]
       province = row[column_name_to_index['Province_State']]
+      if country == 'US' and ',' in province:
+        province = province.split(',')[1].strip()
       collect_data(row, country)
       if province != '':
         combined = country + '/' + province
@@ -40,5 +49,8 @@ cols_to_print = ['Confirmed', 'Deaths', 'Recovered', 'Active']
 for key in keys:
   row = [key]
   for col in cols_to_print:
-    row.append(str(collected_data[key][column_name_to_index[col]]))
+    if col in column_name_to_index:
+      row.append(str(collected_data[key][column_name_to_index[col]]))
+    else:
+      row.append('???')
   print(','.join(row))
